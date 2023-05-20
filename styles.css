@@ -1,0 +1,74 @@
+/* CSS variables */
+:root {
+    --primary-color: #0a1128;
+    --secondary-color: #001f54;
+    --ternary-color: #034078;
+    --quaternary-color: #1282a2;
+    --quinary-color: #fefcfb;
+    --font-size-base: 16px;
+    --font-family-base: "Roboto Mono", monospace;
+}
+
+/* Global styles */
+body {
+    font-size: var(--font-size-base);
+    font-family: var(--font-family-base);
+    color: var(--quinary-color);
+    margin: 0;
+    padding: 50px;
+    background-color: var(--primary-color);
+}
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 120px;
+    background-color: var(--ternary-color);
+}
+
+.nav-img-holder {
+    box-sizing: border-box;
+    position: absolute;
+    height: 80%;
+    top: 50%;
+    translate: 0 -50%;
+    left: 50px;
+    width: fit-content;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 10px;
+    border-style: hidden;
+}
+
+.nav-img-holder img {
+    height: 100%;
+}
+
+.nav-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    width: 40%;
+}
+.nav-container ul {
+    display: flex;
+    justify-content: space-around;
+    list-style: none;
+    font-size: 1.3em;
+}
+.teams-div {
+    position: relative;
+    top: 70px;
+}
+.usa-map {
+    margin-top: 50px;
+}
+.states {
+    fill: var(--quinary-color);
+}
+.state-boundaries {
+    fill: none;
+    stroke: var(--quaternary-color);
+}
