@@ -15,25 +15,22 @@ body {
     font-family: var(--font-family-base);
     color: var(--quinary-color);
     margin: 0;
-    padding: 50px;
+    padding: 0;
     background-color: var(--primary-color);
 }
 nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
+    position: relative;
     height: 120px;
     background-color: var(--ternary-color);
 }
 
 .nav-img-holder {
-    box-sizing: border-box;
     position: absolute;
-    height: 80%;
     top: 50%;
-    translate: 0 -50%;
     left: 50px;
+    translate: 0 -50%;
+    box-sizing: border-box;
+    height: 80%;
     width: fit-content;
     background-color: rgba(255, 255, 255, 0.8);
     padding: 10px;
@@ -46,23 +43,22 @@ nav {
 }
 
 .nav-container {
+    width: 20%;
     position: absolute;
-    left: 50%;
     top: 50%;
+    left: 50%;
     translate: -50% -50%;
-    width: 40%;
 }
 .nav-container ul {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     list-style: none;
     font-size: 1.3em;
 }
 .teams-div {
-    position: relative;
-    top: 70px;
+    padding: 50px;
 }
-.usa-map {
+.usa-map{
     margin-top: 50px;
 }
 .states {
@@ -71,4 +67,49 @@ nav {
 .state-boundaries {
     fill: none;
     stroke: var(--quaternary-color);
+}
+.slide-container {
+    position: relative;
+    margin-left: 5%;
+    width: 30%;
+    display: flex;
+    height: 35px;
+}
+.slider{
+    margin-left: 10px;
+    width: 100%;
+}
+.play-btn, .pause-btn{
+    padding:3px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-style: hidden;
+    border-radius: 100%;
+    width: 35px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    display: none;
+}
+.show {
+    display: block;
+}
+.play-btn img , .pause-btn img{
+    height: 100%;
+}
+
+.slider-value {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px;
+    background-color: var(--quinary-color);
+    color: var(--primary-color);
+    font-size: 1em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
 }

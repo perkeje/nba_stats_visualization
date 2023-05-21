@@ -26,10 +26,17 @@
             </div>
         </nav>
         <div class="teams-div">
+            <div class="slide-container">
+                <button class="play-btn show"><img src="assets\play-button.png" alt="play"></button>
+                <button class="pause-btn"><img src="assets\pause.png" alt="play"></button>
+                <input type="range" min="1991" max="2021" value="1" class="slider">
+                <p class="slider-value"></p>
+            </div>
             <div class="usa-map"></div>
         </div>
         <script src="https://d3js.org/d3.v7.min.js"></script>
         <script src="https://unpkg.com/topojson@3"></script>
+        <script src="slider.js"></script>
         <script src="script.js"></script>
     </body>
 </html>
