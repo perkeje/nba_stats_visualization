@@ -63,10 +63,8 @@ nav {
 }
 .states {
     fill: var(--quinary-color);
-}
-.state-boundaries {
-    fill: none;
     stroke: var(--quaternary-color);
+
 }
 .slide-container {
     position: relative;

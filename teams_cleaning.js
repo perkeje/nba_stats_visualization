@@ -59,9 +59,8 @@ fs.createReadStream("./datasets/nba_teams_loc.csv")
                                 team.team_id !== null
                         );
 
-                        // Writing the merged and cleaned data into a new CSV file
                         const csvWriter = createCsvWriter({
-                            path: "teams_stats_cleaned.csv",
+                            path: "datasets/teams_stats_cleaned.csv",
                             header: [
                                 { id: "W", title: "W" },
                                 { id: "L", title: "L" },
