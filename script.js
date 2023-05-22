@@ -39,7 +39,6 @@ d3.csv("./datasets/teams_stats_cleaned.csv")
                     return d.team_id;
                 }
             );
-
             circles.exit().transition().duration(500).attr("r", "0px").remove();
 
             circles
