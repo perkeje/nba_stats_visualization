@@ -1,42 +1,41 @@
-var slider = document.querySelector(".slider");
-var sliderValue = document.querySelector(".slider-value");
-var playButton = document.querySelector(".play-btn");
-var pauseButton = document.querySelector(".pause-btn");
+var slider = d3.select(".slider");
+var sliderValue = d3.select(".slider-value");
+var playButton = d3.select(".play-btn");
+var pauseButton = d3.select(".pause-btn");
 var intervalId;
 
-sliderValue.textContent = slider.value;
+sliderValue.text(slider.property("value"));
 
-slider.addEventListener("input", function () {
-    sliderValue.textContent = slider.value;
+slider.on("input", function () {
+    sliderValue.text(slider.property("value"));
 });
 
-playButton.addEventListener("click", function () {
-    if (slider.value == 2021) {
-        slider.value = 1991;
-        sliderValue.textContent = 1991;
+playButton.on("click", function () {
+    if (slider.property("value") == 2021) {
+        slider.property("value", 1991);
+        sliderValue.text(1991);
     }
     if (!intervalId) {
-        intervalId = setInterval(function () {
-            slider.value = Number(slider.value) + 1;
-            sliderValue.textContent = slider.value;
+        intervalId = d3.interval(function () {
+            slider.property("value", Number(slider.property("value")) + 1);
+            sliderValue.text(slider.property("value"));
 
-            if (slider.value == 2021) {
+            if (slider.property("value") == 2021) {
                 pause();
             }
-            // createCircles(slider.value);
         }, 1000);
     }
-    playButton.classList.toggle("show");
-    pauseButton.classList.toggle("show");
+    playButton.classed("show", false);
+    pauseButton.classed("show", true);
 });
 
-pauseButton.addEventListener("click", function () {
+pauseButton.on("click", function () {
     pause();
 });
 
 function pause() {
-    clearInterval(intervalId);
+    if (intervalId) intervalId.stop();
     intervalId = null;
-    pauseButton.classList.toggle("show");
-    playButton.classList.toggle("show");
+    pauseButton.classed("show", false);
+    playButton.classed("show", true);
 }

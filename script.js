@@ -45,7 +45,7 @@ d3.csv(".\\datasets\\teams_stats_cleaned.csv")
                 .enter()
                 .append("circle")
                 .attr("r", function (d) {
-                    let r = 30 * d["W/L%"];
+                    let r = 50 * d["W/L%"];
                     return `${r}px`;
                 })
                 .attr("cx", function (d) {
@@ -68,7 +68,7 @@ d3.csv(".\\datasets\\teams_stats_cleaned.csv")
                 .append("image")
                 .attr("height", 1)
                 .attr("width", 1)
-                .attr("preserveAspectRatio", "xMidYMid slice")
+                .attr("preserveAspectRatio", "meet")
                 .attr(
                     "href",
                     `https://raw.githubusercontent.com/sharry29/DataViz/master/misc/logos/${team.team_id}.png`
