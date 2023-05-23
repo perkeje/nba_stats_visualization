@@ -5,8 +5,8 @@ const _ = require("lodash");
 
 let oldNames = {
     "oklahoma city": "Seattle SuperSonics",
-    "brooklyn": "New Jersey Nets",
-    "memphis": "Vancouver Grizzlies",
+    brooklyn: "New Jersey Nets",
+    memphis: "Vancouver Grizzlies",
     "la lakers": "Los Angeles Lakers",
     "la clippers": "Los Angeles Clippers",
 };
@@ -86,10 +86,16 @@ fs.createReadStream("./datasets/nba_teams_loc.csv")
                                             ? teamName.Abbreviation
                                             : null,
                                         payroll: teamPayroll
-                                            ? teamPayroll.payroll
+                                            ? teamPayroll.payroll.replace(
+                                                  /[,$]/g,
+                                                  ""
+                                              )
                                             : null,
                                         adjPayroll: teamPayroll
-                                            ? teamPayroll.inflationAdjPayroll
+                                            ? teamPayroll.inflationAdjPayroll.replace(
+                                                  /[,$]/g,
+                                                  ""
+                                              )
                                             : null,
                                     };
                                 });

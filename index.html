@@ -27,12 +27,59 @@
         </nav>
         <div class="teams-div">
             <div class="slide-container">
-                <button class="play-btn show"><img src="assets\play-button.png" alt="play"></button>
-                <button class="pause-btn"><img src="assets\pause.png" alt="play"></button>
-                <input type="range" min="1991" max="2021" value="1" class="slider">
+                <button class="play-btn show">
+                    <img src="assets\play-button.png" alt="play" />
+                </button>
+                <button class="pause-btn">
+                    <img src="assets\pause.png" alt="play" />
+                </button>
+                <input
+                    type="range"
+                    min="1991"
+                    max="2021"
+                    value="1"
+                    class="slider"
+                />
                 <p class="slider-value"></p>
             </div>
-            <div class="usa-map"></div>
+            <div class="usa-map">
+                <div class="tooltip"></div>
+            </div>
+            <div class="criteria-radio">
+                <input
+                    type="radio"
+                    name="criteria"
+                    id="wl"
+                    value="W/L%"
+                    checked
+                />
+                <label for="wl">W/L%</label>
+
+                <input type="radio" name="criteria" id="w" value="W" />
+                <label for="w">W</label>
+
+                <input type="radio" name="criteria" id="l" value="L" />
+                <label for="l">L</label>
+
+                <input
+                    type="radio"
+                    name="criteria"
+                    id="payroll"
+                    value="payroll"
+                />
+                <label for="payroll">Payroll</label>
+
+                <input
+                    type="radio"
+                    name="criteria"
+                    id="adjusted-payroll"
+                    value="adjusted payroll"
+                />
+                <label for="adjusted-payroll">Adjusted Payroll</label>
+            </div>
+            <button class="west-zoom-btn">West</button>
+            <button class="east-zoom-btn">East</button>
+            <button class="rst-zoom-btn">Reset</button>
         </div>
         <script src="https://d3js.org/d3.v7.min.js"></script>
         <script src="https://unpkg.com/topojson@3"></script>
