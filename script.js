@@ -211,7 +211,7 @@ const getSelectedCriteria = () => {
     criteria = d3.select("input[name='criteria']:checked").node().value;
 };
 
-d3.select(".usa-map").on("mousemove", function (e, d) {
+d3.select(".teams-div").on("mousemove", function (e, d) {
     const currentMousePosition = d3.pointer(e);
     tooltip
         .style("left", currentMousePosition[0] + "px")
