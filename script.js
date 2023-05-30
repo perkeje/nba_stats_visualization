@@ -35,20 +35,39 @@ var svg = d3
     .append("svg")
     .attr("width", 975)
     .attr("height", 610);
-//480,300, 1200
-//WEST: 1300, 840, 320
-//EAST: 1600, -150, 250
+
+var g = svg.append("g");
+
+var zoom = d3
+    .zoom()
+    .scaleExtent([1, 10])
+    .on("zoom", (event) => {
+        svg.attr("transform", event.transform);
+    });
+
 var projection = d3
     .geoAlbers()
     .scale(baseScale)
     .translate([baseTranslateX, baseTranslateY]);
 var path = d3.geoPath().projection(projection);
-var defs = svg.append("defs");
+var defs = g.append("defs");
+var zoom = d3
+    .zoom()
+    .scaleExtent([1, 10])
+    .translateExtent([
+        [-500, 0],
+        [975 + 450, 610],
+    ])
+    .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+    });
 
 let mapInteraction = async () => {
     try {
         let us = await loadMap();
-        svg.attr("class", "states")
+
+        g.append("g")
+            .attr("class", "states")
             .selectAll("path")
             .data(topojson.feature(us, us.objects.states).features)
             .enter()
@@ -56,7 +75,8 @@ let mapInteraction = async () => {
             .attr("d", path)
             .lower();
 
-        getSelectedCriteria();
+        svg.call(zoom);
+        setSelectedCriteria();
         const teams = await loadTeams();
         const defaultYear = teams[0].Year;
         createPatterns(teams);
@@ -96,28 +116,32 @@ let mapInteraction = async () => {
         });
 
         criteriaRadioButtons.on("change", () => {
-            getSelectedCriteria();
-            console.log(criteria);
+            setSelectedCriteria();
+            let year = slider.property("value");
+            createCircles(year, teams);
         });
 
         westZoom.on("click", () => {
-            d3.select(".states")
-                .transition()
+            svg.transition()
                 .duration(750)
-                .attr("transform", "translate(350, 30) scale(1.1)");
+                .call(
+                    zoom.transform,
+                    d3.zoomIdentity.translate(287, -5).scale(1.1)
+                );
         });
         eastZoom.on("click", () => {
-            d3.select(".states")
-                .transition()
+            svg.transition()
                 .duration(750)
-                .attr("transform", "translate(-610, -65) scale(1.35)");
+                .call(
+                    zoom.transform,
+                    d3.zoomIdentity.translate(-654, -101).scale(1.17)
+                );
         });
 
         rstZoom.on("click", () => {
-            d3.select(".states")
-                .transition()
+            svg.transition()
                 .duration(750)
-                .attr("transform", "translate(0, 0) scale(1)");
+                .call(zoom.transform, d3.zoomIdentity);
         });
     } catch (err) {
         console.log(err);
@@ -125,7 +149,7 @@ let mapInteraction = async () => {
 };
 
 const createCircles = (year, teams) => {
-    let circles = svg.selectAll("circle").data(
+    let circles = g.selectAll("circle").data(
         teams.filter((d) => {
             return d.Year === year;
         }),
@@ -133,6 +157,17 @@ const createCircles = (year, teams) => {
             return d.team_id;
         }
     );
+
+    let minValue = d3.min(teams, (d) => +d[criteria]);
+    let maxValue = d3.max(teams, (d) => +d[criteria]);
+
+    let minRadius = 10;
+    let maxRadius = 50;
+
+    let radiusScale = d3
+        .scaleLinear()
+        .domain([minValue, maxValue])
+        .range([minRadius, maxRadius]);
     circles
         .exit()
         .on("mouseout", null)
@@ -153,32 +188,37 @@ const createCircles = (year, teams) => {
         .style("fill", (d) => `url(#${d.team_id})`)
         .style("stroke", (d) => d.color)
         .style("stroke-width", "2px")
+        .style("cursor", "pointer")
+        .merge(circles)
         .on("mouseover", (e, d) => {
             hoveredTeam = d.team_id;
             tooltip
-                .html(`Team: ${d.name}<br>W/L%: ${d["W/L%"]}`)
+                .html(`Team: ${d.name}<br>${criteria}: ${d[criteria]}`)
                 .style("opacity", 0.8);
 
             d3.select(e.target)
                 .raise()
-                .attr("r", `${60 * d["W/L%"]}px`);
+                .attr("r", (d) => `${radiusScale(d[criteria]) * 1.1}px`);
         })
         .on("mouseout", (e, d) => {
             hoveredTeam = null;
             tooltip.style("opacity", 0);
-            d3.select(e.target).attr("r", `${50 * d["W/L%"]}px`);
+            d3.select(e.target).attr(
+                "r",
+                (d) => `${radiusScale(d[criteria])}px`
+            );
         })
-        .style("cursor", "pointer")
-        .merge(circles)
         .transition()
         .duration(500)
-        .attr("r", (d) => `${50 * d["W/L%"]}px`);
+        .attr("r", (d) => `${radiusScale(d[criteria])}px`);
 
     if (hoveredTeam) {
         const teamData = teams.find(
             (team) => team.team_id == hoveredTeam && team.Year == year
         );
-        tooltip.html(`Team: ${teamData.name}<br>W/L%: ${teamData["W/L%"]}`);
+        tooltip.html(
+            `Team: ${teamData.name}<br>${criteria}: ${teamData[criteria]}`
+        );
     }
 };
 
@@ -207,7 +247,7 @@ const createPatterns = (teams) => {
     });
 };
 
-const getSelectedCriteria = () => {
+const setSelectedCriteria = () => {
     criteria = d3.select("input[name='criteria']:checked").node().value;
 };
 
