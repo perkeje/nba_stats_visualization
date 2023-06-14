@@ -7,6 +7,7 @@ var criteriaRadioButtons = d3.selectAll("input[name='criteria']");
 var eastZoom = d3.select(".east-zoom-btn");
 var westZoom = d3.select(".west-zoom-btn");
 var rstZoom = d3.select(".rst-zoom-btn");
+var formatNumber = d3.format(",");
 var intervalId;
 var hoveredTeam = null;
 let selectedTeam = null;
@@ -63,7 +64,7 @@ var zoom = d3
         g.attr("transform", event.transform);
     });
 
-const linePlotMargin = { top: 20, right: 20, bottom: 30, left: 40 };
+const linePlotMargin = { top: 50, right: 10, bottom: 50, left: 80 };
 const linePlotWidth = 600;
 const linePlotHeight = 400;
 
@@ -81,8 +82,8 @@ const linePlotSvg = d3
 let xAxisLabel = linePlotSvg
     .append("text")
     .attr("class", "axis-label")
-    .attr("x", linePlotWidth / 2)
-    .attr("y", linePlotHeight + linePlotMargin.bottom)
+    .attr("x", linePlotWidth / 2 - 5)
+    .attr("y", linePlotHeight + linePlotMargin.bottom - 10)
     .style("text-anchor", "middle")
     .text("Year")
     .style("fill", "#fefcfb");
@@ -92,7 +93,7 @@ let yAxisLabel = linePlotSvg
     .attr("class", "axis-label")
     .attr("transform", "rotate(-90)")
     .attr("x", -linePlotHeight / 2)
-    .attr("y", -linePlotMargin.left + 11)
+    .attr("y", -linePlotMargin.left + 15)
     .style("text-anchor", "middle")
     .style("fill", "#fefcfb");
 
@@ -100,7 +101,7 @@ let plotTitle = linePlotSvg
     .append("text")
     .attr("class", "plot-title")
     .attr("x", linePlotWidth / 2)
-    .attr("y", -5)
+    .attr("y", -15)
     .style("text-anchor", "middle")
     .style("fill", "#fefcfb");
 
@@ -197,7 +198,7 @@ const createCircles = (year, teams) => {
             return d.Year === year;
         }),
         (d) => {
-            return d.team_id;
+            return d.Team_id;
         }
     );
 
@@ -225,18 +226,22 @@ const createCircles = (year, teams) => {
     circles
         .enter()
         .append("circle")
-        .attr("cx", (d) => projection([d.lon, d.lat])[0])
-        .attr("cy", (d) => projection([d.lon, d.lat])[1])
+        .attr("cx", (d) => projection([d.Lon, d.Lat])[0])
+        .attr("cy", (d) => projection([d.Lon, d.Lat])[1])
         .attr("r", "0px")
-        .style("fill", (d) => `url(#${d.team_id})`)
-        .style("stroke", (d) => d.color)
+        .style("fill", (d) => `url(#${d.Team_id})`)
+        .style("stroke", (d) => d.Color)
         .style("stroke-width", "2px")
         .style("cursor", "pointer")
         .merge(circles)
         .on("mouseover", (e, d) => {
-            hoveredTeam = d.team_id;
+            hoveredTeam = d.Team_id;
             tooltip
-                .html(`Team: ${d.name}<br>${criteria}: ${d[criteria]}`)
+                .html(
+                    `Team: ${d.Name}<br>${criteria}: ${
+                        criteria === "Payroll" ? "$" : ""
+                    }${formatNumber(d[criteria])}`
+                )
                 .style("opacity", 0.8);
 
             d3.select(e.target)
@@ -252,15 +257,15 @@ const createCircles = (year, teams) => {
             );
         })
         .on("click", (e, d) => {
-            selectedTeam = d.team_id;
+            selectedTeam = d.Team_id;
             const teamData = teams.filter(
-                (team) => team.team_id === selectedTeam && team.Year <= year
+                (team) => team.Team_id === selectedTeam && team.Year <= year
             );
             const teamChartData = teamData.map((data) => ({
                 Year: data.Year,
                 Value: +data[criteria],
             }));
-            plotTitle.text(`Team: ${d.name}`);
+            plotTitle.text(`Team: ${d.Name}`);
             renderLinePlot(teamChartData);
         })
         .transition()
@@ -269,7 +274,7 @@ const createCircles = (year, teams) => {
 
     if (selectedTeam) {
         const teamData = teams.filter(
-            (team) => team.team_id === selectedTeam && team.Year <= year
+            (team) => team.Team_id === selectedTeam && team.Year <= year
         );
         const teamChartData = teamData.map((data) => ({
             Year: data.Year,
@@ -281,10 +286,12 @@ const createCircles = (year, teams) => {
 
     if (hoveredTeam) {
         const teamData = teams.find(
-            (team) => team.team_id == hoveredTeam && team.Year == year
+            (team) => team.Team_id == hoveredTeam && team.Year == year
         );
         tooltip.html(
-            `Team: ${teamData.name}<br>${criteria}: ${teamData[criteria]}`
+            `Team: ${teamData.Name}<br>${criteria}: ${
+                criteria === "Payroll" ? "$" : ""
+            }${formatNumber(teamData[criteria])}`
         );
     }
 };
@@ -299,7 +306,7 @@ const pause = () => {
 const createPatterns = (teams) => {
     teams.forEach((team) => {
         defs.append("pattern")
-            .attr("id", team.team_id)
+            .attr("id", team.Team_id)
             .attr("height", "100%")
             .attr("width", "100%")
             .attr("patternContentUnits", "objectBoundingBox")
@@ -309,7 +316,7 @@ const createPatterns = (teams) => {
             .attr("preserveAspectRatio", "xMidYMid slice")
             .attr(
                 "href",
-                `https://raw.githubusercontent.com/sharry29/DataViz/master/misc/logos/${team.team_id}.png`
+                `https://raw.githubusercontent.com/sharry29/DataViz/master/misc/logos/${team.Team_id}.png`
             );
     });
 };
@@ -355,9 +362,20 @@ function initializeLinePlot() {
         .attr("width", linePlotWidth)
         .attr("height", linePlotHeight)
         .style("fill", "#fefcfb");
+
+    linePlotSvg
+        .append("text")
+        .attr("class", "default-text")
+        .attr("x", linePlotWidth / 2)
+        .attr("y", linePlotHeight / 2)
+        .style("text-anchor", "middle")
+        .text("Click on a team to display data")
+        .style("fill", "#808080");
 }
 
 function renderLinePlot(data) {
+    linePlotSvg.select(".default-text").style("display", "none");
+
     const xScale = d3
         .scaleBand()
         .domain(data.map((d) => d.Year))
@@ -420,7 +438,11 @@ function renderLinePlot(data) {
         .merge(newCircles)
         .on("mouseover", (e, d) => {
             tooltip
-                .html(`Year: ${d.Year}<br>Value: ${d.Value}`)
+                .html(
+                    `Year: ${d.Year}<br>${criteria}: ${
+                        criteria === "Payroll" ? "$" : ""
+                    }${formatNumber(d.Value)}`
+                )
                 .style("opacity", 0.8)
                 .style("left", `${d3.pointer(e)[0]}px`)
                 .style("top", `${d3.pointer(e)[1]}px`);

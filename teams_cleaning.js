@@ -72,27 +72,21 @@ fs.createReadStream("./datasets/nba_teams_loc.csv")
 
                                     return {
                                         ...teamStat,
-                                        lat: teamLocation
+                                        Lat: teamLocation
                                             ? teamLocation.lat
                                             : null,
-                                        lon: teamLocation
+                                        Lon: teamLocation
                                             ? teamLocation.lon
                                             : null,
-                                        color: teamLocation
+                                        Color: teamLocation
                                             ? teamLocation.color
                                             : null,
-                                        name: teamName ? teamName.Name : null,
-                                        team_id: teamName
+                                        Name: teamName ? teamName.Name : null,
+                                        Team_id: teamName
                                             ? teamName.Abbreviation
                                             : null,
-                                        payroll: teamPayroll
+                                        Payroll: teamPayroll
                                             ? teamPayroll.payroll.replace(
-                                                  /[,$]/g,
-                                                  ""
-                                              )
-                                            : null,
-                                        adjPayroll: teamPayroll
-                                            ? teamPayroll.inflationAdjPayroll.replace(
                                                   /[,$]/g,
                                                   ""
                                               )
@@ -104,13 +98,12 @@ fs.createReadStream("./datasets/nba_teams_loc.csv")
                                     (team) =>
                                         team.Team !== "Central Division" &&
                                         team.Team !== "Midwest Division" &&
-                                        team.lat !== null &&
+                                        team.Lat !== null &&
                                         team.lon !== null &&
                                         team.color !== null &&
                                         team.name !== null &&
                                         team.team_id !== null &&
-                                        team.payroll !== null &&
-                                        team.adjPayroll !== null
+                                        team.payroll !== null
                                 );
 
                                 const csvWriter = createCsvWriter({
@@ -123,16 +116,12 @@ fs.createReadStream("./datasets/nba_teams_loc.csv")
                                         { id: "PA/G", title: "PA/G" },
                                         { id: "PA/G", title: "PA/G" },
                                         { id: "Year", title: "Year" },
-                                        { id: "lat", title: "lat" },
-                                        { id: "lon", title: "lon" },
-                                        { id: "color", title: "color" },
-                                        { id: "name", title: "name" },
-                                        { id: "team_id", title: "team_id" },
-                                        { id: "payroll", title: "payroll" },
-                                        {
-                                            id: "adjPayroll",
-                                            title: "adjPayroll",
-                                        },
+                                        { id: "Lat", title: "Lat" },
+                                        { id: "Lon", title: "Lon" },
+                                        { id: "Color", title: "Color" },
+                                        { id: "Name", title: "Name" },
+                                        { id: "Team_id", title: "Team_id" },
+                                        { id: "Payroll", title: "Payroll" },
                                     ],
                                 });
 
