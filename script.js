@@ -122,13 +122,49 @@ let pieSvg = d3
 
 pieSvg.append("circle").attr("r", radius).attr("fill", "white");
 
-// Add the text in the center of the circle
 pieSvg
     .append("text")
     .attr("class", "default-text")
     .style("text-anchor", "middle")
     .text("Click on a team to display data")
     .style("fill", "#808080");
+
+const barChartMargin = { top: 50, right: 10, bottom: 50, left: 80 };
+const barChartWidth = 1200;
+const barChartHeight = 400;
+
+const barChartSvg = d3
+    .select(".bar-chart")
+    .append("svg")
+    .attr("width", barChartWidth + barChartMargin.left + barChartMargin.right)
+    .attr("height", barChartHeight + barChartMargin.top + barChartMargin.bottom)
+    .append("g")
+    .attr(
+        "transform",
+        `translate(${barChartMargin.left},${barChartMargin.top})`
+    );
+
+let xBarScale = d3.scaleBand().range([0, barChartWidth]).padding(0.1);
+let yBarScale = d3.scaleLinear().range([barChartHeight, 0]);
+
+let xAxisBar = d3.axisBottom(xBarScale);
+let yAxisBar = d3.axisLeft(yBarScale);
+
+barChartSvg
+    .append("g")
+    .attr("class", "x-axis-bar")
+    .attr("transform", `translate(0, ${barChartHeight})`)
+    .style("fill", "#1282a2");
+
+barChartSvg.append("g").attr("class", "y-axis-bar").style("fill", "#1282a2");
+
+let barTitle = barChartSvg
+    .append("text")
+    .attr("class", "bar-title")
+    .attr("x", barChartWidth / 2)
+    .attr("y", -15)
+    .style("text-anchor", "middle")
+    .style("fill", "#fefcfb");
 
 let mapInteraction = async () => {
     try {
@@ -149,12 +185,14 @@ let mapInteraction = async () => {
         const defaultYear = teams[0].Year;
         createPatterns(teams);
         createCircles(defaultYear, teams);
+        createBarChart(defaultYear, teams);
 
         playButton.on("click", () => {
             if (slider.property("value") == 2021) {
                 slider.property("value", 1991);
                 sliderValue.text(1991);
                 createCircles(slider.property("value"), teams);
+                createBarChart(slider.property("value"), teams);
             }
             if (!intervalId) {
                 intervalId = d3.interval(() => {
@@ -165,6 +203,7 @@ let mapInteraction = async () => {
                     let value = slider.property("value");
                     sliderValue.text(value);
                     createCircles(value, teams);
+                    createBarChart(value, teams);
                     if (slider.property("value") == 2021) {
                         pause();
                     }
@@ -181,12 +220,14 @@ let mapInteraction = async () => {
         slider.on("change", (e) => {
             var year = e.target.value;
             createCircles(year, teams);
+            createBarChart(year, teams);
         });
 
         criteriaRadioButtons.on("change", () => {
             setSelectedCriteria();
             let year = slider.property("value");
             createCircles(year, teams);
+            createBarChart(year, teams);
         });
 
         westZoom.on("click", () => {
@@ -581,6 +622,83 @@ function drawPieChart(data) {
         };
     }
 }
+
+const renderBarChart = (data) => {
+    xBarScale.domain(data.map((d) => d.Team_id));
+    yBarScale.domain([0, d3.max(data, (d) => +d[criteria])]);
+
+    barChartSvg.select(".x-axis-bar").transition().duration(500).call(xAxisBar);
+
+    barChartSvg.select(".y-axis-bar").transition().duration(500).call(yAxisBar);
+
+    // Update existing bars
+    const bars = barChartSvg.selectAll(".bar").data(data, (d) => d.Team_id);
+
+    // Remove old bars
+    bars.exit()
+        .transition()
+        .duration(500)
+        .attr("y", (d) => yBarScale(0))
+        .attr("height", 0)
+        .remove();
+
+    // Enter new bars
+    bars.enter()
+        .append("rect")
+        .attr("class", "bar")
+        .style("fill", (d) => d.Color)
+        .attr("x", (d) => xBarScale(d.Team_id))
+        .attr("width", xBarScale.bandwidth())
+        .attr("y", (d) => yBarScale(0))
+        .attr("height", 0)
+        .style("cursor", "pointer")
+        .merge(bars)
+        .on("mouseover", (e, d) => {
+            hoveredTeam = d.Team_id;
+            tooltip
+                .html(
+                    `Team: ${d.Name}<br>${criteria}: ${
+                        criteria === "Payroll" ? "$" : ""
+                    }${formatNumber(d[criteria])}`
+                )
+                .style("opacity", 0.8)
+                .style("left", `${d3.pointer(e)[0]}px`)
+                .style("top", `${d3.pointer(e)[1]}px`);
+
+            d3.select(e.target).style("fill", "yellow");
+        })
+        .on("mouseout", (e, d) => {
+            hoveredTeam = null;
+            tooltip.style("opacity", 0);
+            d3.select(e.target).style("fill", (d) => d.Color);
+        })
+        .transition()
+        .duration(500)
+        .attr("x", (d) => xBarScale(d.Team_id))
+        .attr("width", xBarScale.bandwidth())
+        .attr("y", (d) => yBarScale(+d[criteria]))
+        .attr("height", (d) => barChartHeight - yBarScale(+d[criteria]));
+
+    bars.transition()
+        .duration(500)
+        .attr("x", (d) => xBarScale(d.Team_id))
+        .attr("width", xBarScale.bandwidth())
+        .attr("y", (d) => yBarScale(+d[criteria]))
+        .attr("height", (d) => barChartHeight - yBarScale(+d[criteria]));
+};
+
+const createBarChart = (year, teams) => {
+    const data = teams
+        .filter((d) => d.Year === year)
+        .sort((a, b) => {
+            // Sort the data based on Team_id
+            return d3.ascending(a.Team_id, b.Team_id);
+        });
+
+    // Update the xBarScale domain to match the sorted data
+    xBarScale.domain(data.map((d) => d.Team_id));
+    renderBarChart(data);
+};
 
 setSelectedCriteria();
 mapInteraction();

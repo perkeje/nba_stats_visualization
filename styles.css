@@ -164,3 +164,8 @@ nav {
     justify-items: center;
     align-items: center;
 }
+
+.bar-chart {
+    grid-column: span 2;
+    justify-self: center;
+  }
