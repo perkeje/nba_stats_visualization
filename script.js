@@ -166,6 +166,24 @@ let barTitle = barChartSvg
     .style("text-anchor", "middle")
     .style("fill", "#fefcfb");
 
+barChartSvg
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("x", barChartWidth / 2)
+    .attr("y", barChartHeight + barChartMargin.bottom - 10)
+    .style("text-anchor", "middle")
+    .text("Team")
+    .style("fill", "#fefcfb");
+
+let barchartLabelY = barChartSvg
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -barChartHeight / 2)
+    .attr("y", -barChartMargin.left + 15)
+    .style("text-anchor", "middle")
+    .style("fill", "#fefcfb");
+
 const scatterPlotMargin = { top: 50, right: 50, bottom: 50, left: 80 };
 const scatterPlotWidth = 600;
 const scatterPlotHeight = 400;
@@ -192,6 +210,25 @@ scatterPlotSvg
     .attr("width", scatterPlotWidth)
     .attr("height", scatterPlotHeight)
     .style("fill", "white");
+
+scatterPlotSvg
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("x", scatterPlotWidth / 2)
+    .attr("y", scatterPlotHeight + scatterPlotMargin.bottom - 10)
+    .style("text-anchor", "middle")
+    .text("W/L%")
+    .style("fill", "#fefcfb");
+
+scatterPlotSvg
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -scatterPlotHeight / 2)
+    .attr("y", -scatterPlotMargin.left + 15)
+    .style("text-anchor", "middle")
+    .text("Payroll")
+    .style("fill", "#fefcfb");
 
 let xScatterScale = d3.scaleLinear().range([0, scatterPlotWidth]);
 let yScatterScale = d3.scaleLinear().range([scatterPlotHeight, 0]);
@@ -524,6 +561,7 @@ const createPatterns = (teams) => {
 const setSelectedCriteria = () => {
     criteria = d3.select("input[name='criteria']:checked").node().value;
     yAxisLabel.text(criteria);
+    barchartLabelY.text(criteria);
 };
 
 d3.select(".teams-div").on("mousemove", function (e, d) {
@@ -667,28 +705,23 @@ function drawPieChart(data) {
         .domain(dataArr.map((d) => d[0]))
         .range(d3.schemeSet2);
 
-    // Compute the position of each group on the pie:
     let pie = d3
         .pie()
         .value(function (d) {
             return d[1];
         })
-        .sortValues(null); // This will keep the same arc for the same data even if their values change
+        .sortValues(null);
 
     let data_ready = pie(dataArr);
 
     let arc = d3.arc().innerRadius(0).outerRadius(radius);
 
-    // Bind data
-    let path = pieSvg.selectAll("path").data(data_ready, (d) => d.data[0]); // Use the data name as the key to ensure the correct update
+    let path = pieSvg.selectAll("path").data(data_ready, (d) => d.data[0]);
 
-    // Exit old elements
     path.exit().remove();
 
-    // Update existing elements
     path.transition().duration(200).attrTween("d", arcTween);
 
-    // Enter new elements
     path.enter()
         .append("path")
         .attr("fill", function (d) {
@@ -699,18 +732,15 @@ function drawPieChart(data) {
         .style("opacity", 0.7)
         .each(function (d) {
             this._current = d;
-        }) // Store the initial values for transition
+        })
         .transition()
         .duration(200)
         .attrTween("d", arcTween);
 
-    // Bind data for labels
-    let labels = pieSvg.selectAll(".label").data(data_ready, (d) => d.data[0]); // Use the data name as the key to ensure the correct update
+    let labels = pieSvg.selectAll(".label").data(data_ready, (d) => d.data[0]);
 
-    // Exit old labels
     labels.exit().remove();
 
-    // Update existing labels
     labels
         .attr("transform", getLabelPosition)
         .text((d) => `${d.data[0]}: ${d.data[1]}`)
@@ -724,7 +754,6 @@ function drawPieChart(data) {
             };
         });
 
-    // Enter new labels
     labels
         .enter()
         .append("text")
@@ -738,8 +767,8 @@ function drawPieChart(data) {
 
     function getLabelPosition(d) {
         let pos = arc.centroid(d);
-        pos[0] *= 1.5; // multiply by a constant factor
-        pos[1] *= 1.5; // multiply by a constant factor
+        pos[0] *= 1.5;
+        pos[1] *= 1.5;
         return "translate(" + pos + ")";
     }
 
@@ -760,10 +789,8 @@ const renderBarChart = (data) => {
 
     barChartSvg.select(".y-axis-bar").transition().duration(500).call(yAxisBar);
 
-    // Update existing bars
     const bars = barChartSvg.selectAll(".bar").data(data, (d) => d.Team_id);
 
-    // Remove old bars
     bars.exit()
         .transition()
         .duration(500)
@@ -771,7 +798,6 @@ const renderBarChart = (data) => {
         .attr("height", 0)
         .remove();
 
-    // Enter new bars
     bars.enter()
         .append("rect")
         .attr("class", "bar")
@@ -820,11 +846,9 @@ const createBarChart = (year, teams) => {
     const data = teams
         .filter((d) => d.Year === year)
         .sort((a, b) => {
-            // Sort the data based on Team_id
             return d3.ascending(a.Team_id, b.Team_id);
         });
 
-    // Update the xBarScale domain to match the sorted data
     xBarScale.domain(data.map((d) => d.Team_id));
     renderBarChart(data);
 };
