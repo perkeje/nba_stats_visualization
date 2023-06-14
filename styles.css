@@ -99,10 +99,10 @@ nav {
 }
 .criteria-radio {
     position: absolute;
-    right: 5%;
+    right: 0;
     top: 50%;
     translate: 0 -50%;
-    width: 15%;
+    width: 20%;
 }
 .slider {
     margin-left: 10px;
@@ -155,4 +155,12 @@ nav {
     background-color: #fff;
     border: 1px solid #000;
     padding: 10px;
+}
+
+.plots-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+    gap: 20px;
+    justify-items: center;
+    align-items: center;
 }

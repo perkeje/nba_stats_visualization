@@ -105,6 +105,31 @@ let plotTitle = linePlotSvg
     .style("text-anchor", "middle")
     .style("fill", "#fefcfb");
 
+let pieWidth = 450;
+let pieHeight = 450;
+let pieMargin = 40;
+
+let radius = Math.min(pieWidth, pieHeight) / 2 - pieMargin;
+
+let pieSvg = d3
+    .select(".pie-chart")
+    .append("svg")
+    .attr("width", pieWidth)
+    .attr("height", pieHeight)
+    .attr("fill", "white")
+    .append("g")
+    .attr("transform", "translate(" + pieWidth / 2 + "," + pieHeight / 2 + ")");
+
+pieSvg.append("circle").attr("r", radius).attr("fill", "white");
+
+// Add the text in the center of the circle
+pieSvg
+    .append("text")
+    .attr("class", "default-text")
+    .style("text-anchor", "middle")
+    .text("Click on a team to display data")
+    .style("fill", "#808080");
+
 let mapInteraction = async () => {
     try {
         let us = await loadMap();
@@ -192,7 +217,6 @@ let mapInteraction = async () => {
 };
 
 const createCircles = (year, teams) => {
-    const teamChartData = [];
     let circles = g.selectAll("circle").data(
         teams.filter((d) => {
             return d.Year === year;
@@ -267,6 +291,8 @@ const createCircles = (year, teams) => {
             }));
             plotTitle.text(`Team: ${d.Name}`);
             renderLinePlot(teamChartData);
+            const { W, L } = d;
+            drawPieChart({ W, L });
         })
         .transition()
         .duration(500)
@@ -281,7 +307,11 @@ const createCircles = (year, teams) => {
             Value: +data[criteria],
         }));
 
+        const currentYearData = teamData.find((data) => data.Year == year);
+        const { W, L } = currentYearData;
+
         renderLinePlot(teamChartData);
+        drawPieChart({ W, L });
     }
 
     if (hoveredTeam) {
@@ -455,6 +485,101 @@ function renderLinePlot(data) {
         .attr("cx", (d) => xScale(d.Year))
         .attr("cy", (d) => yScale(d.Value))
         .attr("r", 4);
+}
+
+function drawPieChart(data) {
+    pieSvg.select(".default-text").style("display", "none");
+
+    let dataArr = Object.entries(data);
+
+    let color = d3
+        .scaleOrdinal()
+        .domain(dataArr.map((d) => d[0]))
+        .range(d3.schemeSet2);
+
+    // Compute the position of each group on the pie:
+    let pie = d3
+        .pie()
+        .value(function (d) {
+            return d[1];
+        })
+        .sortValues(null); // This will keep the same arc for the same data even if their values change
+
+    let data_ready = pie(dataArr);
+
+    let arc = d3.arc().innerRadius(0).outerRadius(radius);
+
+    // Bind data
+    let path = pieSvg.selectAll("path").data(data_ready, (d) => d.data[0]); // Use the data name as the key to ensure the correct update
+
+    // Exit old elements
+    path.exit().remove();
+
+    // Update existing elements
+    path.transition().duration(200).attrTween("d", arcTween);
+
+    // Enter new elements
+    path.enter()
+        .append("path")
+        .attr("fill", function (d) {
+            return color(d.data[0]);
+        })
+        .attr("stroke", "white")
+        .style("stroke-width", "2px")
+        .style("opacity", 0.7)
+        .each(function (d) {
+            this._current = d;
+        }) // Store the initial values for transition
+        .transition()
+        .duration(200)
+        .attrTween("d", arcTween);
+
+    // Bind data for labels
+    let labels = pieSvg.selectAll(".label").data(data_ready, (d) => d.data[0]); // Use the data name as the key to ensure the correct update
+
+    // Exit old labels
+    labels.exit().remove();
+
+    // Update existing labels
+    labels
+        .attr("transform", getLabelPosition)
+        .text((d) => `${d.data[0]}: ${d.data[1]}`)
+        .transition()
+        .duration(200)
+        .tween("text", function (d) {
+            const i = d3.interpolate(this._current, +d.data[1]);
+            this._current = d.data[1];
+            return function (t) {
+                this.textContent = `${d.data[0]}: ${i(t).toFixed(0)}`;
+            };
+        });
+
+    // Enter new labels
+    labels
+        .enter()
+        .append("text")
+        .attr("class", "label")
+        .attr("transform", getLabelPosition)
+        .style("text-anchor", "middle")
+        .text((d) => `${d.data[0]}: ${d.data[1]}`)
+        .each(function (d) {
+            this._current = d.data[1];
+        });
+
+    function getLabelPosition(d) {
+        let pos = arc.centroid(d);
+        pos[0] *= 1.5; // multiply by a constant factor
+        pos[1] *= 1.5; // multiply by a constant factor
+        return "translate(" + pos + ")";
+    }
+
+    function arcTween(d) {
+        let i = d3.interpolate(this._current, d);
+        this._current = d;
+        return function (t) {
+            return arc(i(t));
+        };
+    }
 }
 
 setSelectedCriteria();
