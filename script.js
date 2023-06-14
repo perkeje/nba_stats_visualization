@@ -166,6 +166,129 @@ let barTitle = barChartSvg
     .style("text-anchor", "middle")
     .style("fill", "#fefcfb");
 
+const scatterPlotMargin = { top: 50, right: 50, bottom: 50, left: 80 };
+const scatterPlotWidth = 600;
+const scatterPlotHeight = 400;
+
+const scatterPlotSvg = d3
+    .select(".scatter-plot")
+    .append("svg")
+    .attr(
+        "width",
+        scatterPlotWidth + scatterPlotMargin.left + scatterPlotMargin.right
+    )
+    .attr(
+        "height",
+        scatterPlotHeight + scatterPlotMargin.top + scatterPlotMargin.bottom
+    )
+    .append("g")
+    .attr(
+        "transform",
+        `translate(${scatterPlotMargin.left},${scatterPlotMargin.top})`
+    );
+
+scatterPlotSvg
+    .append("rect")
+    .attr("width", scatterPlotWidth)
+    .attr("height", scatterPlotHeight)
+    .style("fill", "white");
+
+let xScatterScale = d3.scaleLinear().range([0, scatterPlotWidth]);
+let yScatterScale = d3.scaleLinear().range([scatterPlotHeight, 0]);
+
+let xAxisScatter = d3.axisBottom(xScatterScale);
+let yAxisScatter = d3.axisLeft(yScatterScale);
+
+scatterPlotSvg
+    .append("g")
+    .attr("class", "x-axis-scatter")
+    .attr("transform", `translate(0, ${scatterPlotHeight})`)
+    .style("fill", "#1282a2");
+
+scatterPlotSvg
+    .append("g")
+    .attr("class", "y-axis-scatter")
+    .style("fill", "#1282a2");
+
+let scatterTitle = scatterPlotSvg
+    .append("text")
+    .attr("class", "scatter-title")
+    .attr("x", scatterPlotWidth / 2)
+    .attr("y", -15)
+    .style("text-anchor", "middle")
+    .style("fill", "#fefcfb");
+
+const renderScatterPlot = (data) => {
+    const minValueY = d3.min(data, (d) => +d.Payroll);
+    const maxValueY = d3.max(data, (d) => +d.Payroll);
+    const minValueX = d3.min(data, (d) => +d["W/L%"]);
+    const maxValueX = d3.max(data, (d) => +d["W/L%"]);
+
+    xScatterScale.domain([minValueX, maxValueX]).nice();
+    yScatterScale.domain([minValueY, maxValueY]).nice();
+
+    scatterPlotSvg
+        .select(".x-axis-scatter")
+        .transition()
+        .duration(500)
+        .call(xAxisScatter);
+    scatterPlotSvg
+        .select(".y-axis-scatter")
+        .transition()
+        .duration(500)
+        .call(yAxisScatter);
+
+    const circles = scatterPlotSvg
+        .selectAll(".circle")
+        .data(data, (d) => d.Team_id);
+
+    circles.exit().transition().duration(500).attr("r", 0).remove();
+
+    circles
+        .enter()
+        .append("circle")
+        .attr("class", "circle")
+        .attr("cx", (d) => xScatterScale(+d["W/L%"]))
+        .attr("cy", (d) => yScatterScale(+d.Payroll))
+        .attr("r", 0)
+        .style("fill", (d) => d.Color)
+        .style("stroke", "white")
+        .style("stroke-width", 2)
+        .style("cursor", "pointer")
+        .merge(circles)
+        .on("mouseover", (e, d) => {
+            tooltip
+                .html(
+                    `Team: ${d.Name}<br>Payroll: $${formatNumber(
+                        d.Payroll
+                    )}<br>W/L%: ${d["W/L%"]}`
+                )
+                .style("opacity", 0.8)
+                .style("left", `${d3.pointer(e)[0]}px`)
+                .style("top", `${d3.pointer(e)[1]}px`);
+
+            d3.select(e.target).style("fill", "yellow").attr("r", 8);
+        })
+        .on("mouseout", (e, d) => {
+            tooltip.style("opacity", 0);
+            d3.select(e.target)
+                .style("fill", (d) => d.Color)
+                .attr("r", 8);
+        })
+        .transition()
+        .duration(500)
+        .attr("cx", (d) => xScatterScale(+d["W/L%"]))
+        .attr("cy", (d) => yScatterScale(+d.Payroll))
+        .attr("r", 8);
+
+    scatterTitle.text("Scatter Plot: Salary vs. Win-Loss Percentage");
+};
+
+const createScatterPlot = (year, teams) => {
+    const data = teams.filter((d) => d.Year === year);
+    renderScatterPlot(data);
+};
+
 let mapInteraction = async () => {
     try {
         let us = await loadMap();
@@ -186,6 +309,7 @@ let mapInteraction = async () => {
         createPatterns(teams);
         createCircles(defaultYear, teams);
         createBarChart(defaultYear, teams);
+        createScatterPlot(defaultYear, teams);
 
         playButton.on("click", () => {
             if (slider.property("value") == 2021) {
@@ -193,6 +317,7 @@ let mapInteraction = async () => {
                 sliderValue.text(1991);
                 createCircles(slider.property("value"), teams);
                 createBarChart(slider.property("value"), teams);
+                createScatterPlot(slider.property("value"), teams);
             }
             if (!intervalId) {
                 intervalId = d3.interval(() => {
@@ -204,6 +329,8 @@ let mapInteraction = async () => {
                     sliderValue.text(value);
                     createCircles(value, teams);
                     createBarChart(value, teams);
+                    createScatterPlot(value, teams);
+
                     if (slider.property("value") == 2021) {
                         pause();
                     }
@@ -221,6 +348,7 @@ let mapInteraction = async () => {
             var year = e.target.value;
             createCircles(year, teams);
             createBarChart(year, teams);
+            createScatterPlot(year, teams);
         });
 
         criteriaRadioButtons.on("change", () => {
@@ -228,6 +356,7 @@ let mapInteraction = async () => {
             let year = slider.property("value");
             createCircles(year, teams);
             createBarChart(year, teams);
+            createScatterPlot(year, teams);
         });
 
         westZoom.on("click", () => {
@@ -349,7 +478,7 @@ const createCircles = (year, teams) => {
         }));
 
         const currentYearData = teamData.find((data) => data.Year == year);
-        const { W, L } = currentYearData;
+        const { W, L } = currentYearData || { W: 0, L: 0 };
 
         renderLinePlot(teamChartData);
         drawPieChart({ W, L });
