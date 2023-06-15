@@ -24,6 +24,14 @@ const loadTeams = async () => {
     }
 };
 
+const loadPlayers = async () => {
+    try {
+        return await d3.csv("./datasets/mvps_cleaned.csv");
+    } catch (err) {
+        throw err;
+    }
+};
+
 const loadMap = async () => {
     try {
         return await d3.json("./maps/usa-topojson.json");
@@ -158,14 +166,6 @@ barChartSvg
 
 barChartSvg.append("g").attr("class", "y-axis-bar").style("fill", "#1282a2");
 
-let barTitle = barChartSvg
-    .append("text")
-    .attr("class", "bar-title")
-    .attr("x", barChartWidth / 2)
-    .attr("y", -15)
-    .style("text-anchor", "middle")
-    .style("fill", "#fefcfb");
-
 barChartSvg
     .append("text")
     .attr("class", "axis-label")
@@ -251,9 +251,10 @@ let scatterTitle = scatterPlotSvg
     .append("text")
     .attr("class", "scatter-title")
     .attr("x", scatterPlotWidth / 2)
-    .attr("y", -15)
+    .attr("y", -30)
     .style("text-anchor", "middle")
-    .style("fill", "#fefcfb");
+    .style("fill", "#fefcfb")
+    .text("Salary vs. Win-Loss Percentage");
 
 const renderScatterPlot = (data) => {
     const minValueY = d3.min(data, (d) => +d.Payroll);
@@ -317,14 +318,298 @@ const renderScatterPlot = (data) => {
         .attr("cx", (d) => xScatterScale(+d["W/L%"]))
         .attr("cy", (d) => yScatterScale(+d.Payroll))
         .attr("r", 8);
-
-    scatterTitle.text("Scatter Plot: Salary vs. Win-Loss Percentage");
 };
 
 const createScatterPlot = (year, teams) => {
     const data = teams.filter((d) => d.Year === year);
     renderScatterPlot(data);
 };
+
+const mvpBarChartTeam = d3
+    .select(".mvp-bar-chart-team")
+    .append("svg")
+    .attr(
+        "width",
+        scatterPlotWidth + scatterPlotMargin.left + scatterPlotMargin.right
+    )
+    .attr(
+        "height",
+        scatterPlotHeight + scatterPlotMargin.top + scatterPlotMargin.bottom
+    )
+    .append("g")
+    .attr(
+        "transform",
+        `translate(${scatterPlotMargin.left},${scatterPlotMargin.top})`
+    );
+
+const xBarScaleTeam = d3.scaleBand().range([0, scatterPlotWidth]).padding(0.1);
+const yBarScaleTeam = d3.scaleLinear().range([scatterPlotHeight, 0]);
+
+const xAxisBarTeam = mvpBarChartTeam
+    .append("g")
+    .attr("class", "x-axis-bar")
+    .attr("transform", `translate(0, ${scatterPlotHeight})`);
+
+const yAxisBarTeam = mvpBarChartTeam.append("g").attr("class", "y-axis-bar");
+
+mvpBarChartTeam
+    .append("text")
+    .attr("class", "bar-title")
+    .attr("x", scatterPlotWidth / 2)
+    .attr("y", -30)
+    .style("text-anchor", "middle")
+    .text("Number of MVP titles by player")
+    .style("fill", "#fefcfb");
+
+mvpBarChartTeam
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("x", scatterPlotWidth / 2)
+    .attr("y", scatterPlotHeight + scatterPlotMargin.bottom - 10)
+    .style("text-anchor", "middle")
+    .text("Teams")
+    .style("fill", "#fefcfb");
+
+mvpBarChartTeam
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -scatterPlotHeight / 2)
+    .attr("y", -scatterPlotMargin.left + 30)
+    .style("text-anchor", "middle")
+    .text("MVP Count")
+    .style("fill", "#fefcfb");
+
+function renderMvpTeamsBarchart(selectedYear, mvpData, teams) {
+    const filteredData = mvpData.filter((d) => d.Year <= selectedYear);
+
+    const teamMvpCounts = d3.rollup(
+        filteredData,
+        (v) => v.length,
+        (d) => d.Tm
+    );
+
+    xBarScaleTeam.domain(Array.from(teamMvpCounts.keys()));
+    yBarScaleTeam.domain([0, d3.max(Array.from(teamMvpCounts.values()))]);
+
+    const xAxisBarTeam = d3.axisBottom(xBarScaleTeam);
+    mvpBarChartTeam
+        .select(".x-axis-bar")
+        .transition()
+        .duration(500)
+        .style("fill", "#1282a2")
+        .call(xAxisBarTeam);
+
+    const yAxisBarTeam = d3.axisLeft(yBarScaleTeam).ticks(5);
+    mvpBarChartTeam
+        .select(".y-axis-bar")
+        .transition()
+        .duration(500)
+        .style("fill", "#1282a2")
+        .call(yAxisBarTeam);
+
+    const barsTeam = mvpBarChartTeam
+        .selectAll(".bar")
+        .data(Array.from(teamMvpCounts.entries()));
+
+    barsTeam
+        .exit()
+        .transition()
+        .duration(500)
+        .attr("y", (d) => yBarScale(0))
+        .attr("height", 0)
+        .remove();
+
+    barsTeam
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .style("fill", (d) => teams.find((team) => team.Team_id === d[0]).Color)
+        .attr("x", (d) => xBarScaleTeam(d[0]))
+        .attr("width", xBarScaleTeam.bandwidth())
+        .attr("y", (d) => yBarScaleTeam(0))
+        .attr("height", 0)
+        .style("cursor", "pointer")
+        .merge(barsTeam)
+        .on("mouseover", (e, d) => {
+            tooltip
+                .html(
+                    `Team: ${teams.find((team) => team.Team_id === d[0]).Name}`
+                )
+                .style("opacity", 0.8)
+                .style("left", `${d3.pointer(e)[0]}px`)
+                .style("top", `${d3.pointer(e)[1]}px`);
+
+            d3.select(e.target).style("fill", "yellow");
+        })
+        .on("mouseout", (e, d) => {
+            hoveredTeam = null;
+            tooltip.style("opacity", 0);
+            d3.select(e.target).style(
+                "fill",
+                (d) => teams.find((team) => team.Team_id === d[0]).Color
+            );
+        })
+        .transition()
+        .duration(500)
+        .attr("x", (d) => xBarScaleTeam(d[0]))
+        .attr("width", xBarScaleTeam.bandwidth())
+        .attr("y", (d) => yBarScaleTeam(d[1]))
+        .attr("height", (d) => scatterPlotHeight - yBarScaleTeam(d[1]));
+
+    const barLabelsTeam = mvpBarChartTeam
+        .selectAll(".bar-label")
+        .data(Array.from(teamMvpCounts.entries()));
+
+    barLabelsTeam
+        .enter()
+        .append("text")
+        .attr("class", "bar-label")
+        .merge(barLabelsTeam)
+        .transition()
+        .duration(500)
+        .attr("x", (d) => xBarScaleTeam(d[0]) + xBarScaleTeam.bandwidth() / 2)
+        .attr("y", (d) => yBarScaleTeam(d[1]) - 5)
+        .text((d) => d[1])
+        .style("text-anchor", "middle")
+        .style("fill", "white");
+
+    barLabelsTeam.exit().remove();
+}
+
+const mvpBarChart = d3
+    .select(".mvp-bar-chart")
+    .append("svg")
+    .attr("width", barChartWidth + barChartMargin.left + barChartMargin.right)
+    .attr("height", barChartHeight + barChartMargin.top + barChartMargin.bottom)
+    .append("g")
+    .attr(
+        "transform",
+        `translate(${barChartMargin.left},${barChartMargin.top})`
+    );
+
+mvpBarChart
+    .append("g")
+    .attr("class", "x-axis-bar")
+    .attr("transform", `translate(0, ${barChartHeight})`)
+    .style("fill", "#1282a2");
+
+mvpBarChart.append("g").attr("class", "y-axis-bar").style("fill", "#1282a2");
+
+mvpBarChart
+    .append("text")
+    .attr("class", "bar-title")
+    .attr("x", barChartWidth / 2)
+    .attr("y", -30)
+    .style("text-anchor", "middle")
+    .text("Number of MVP titles by player")
+    .style("fill", "#fefcfb");
+
+mvpBarChart
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("x", barChartWidth / 2)
+    .attr("y", barChartHeight + barChartMargin.bottom - 5)
+    .style("text-anchor", "middle")
+    .text("Player")
+    .style("fill", "#fefcfb");
+
+mvpBarChart
+    .append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -barChartHeight / 2)
+    .attr("y", -barChartMargin.left + 15)
+    .style("text-anchor", "middle")
+    .text("MVP Count")
+    .style("fill", "#fefcfb");
+
+function renderMvpBarchart(selectedYear, mvpData) {
+    let colorPalette = d3.schemeCategory10;
+    const filteredData = mvpData.filter((d) => d.Year <= selectedYear);
+
+    const playerMvpCounts = d3.rollup(
+        filteredData,
+        (v) => v.length,
+        (d) => d.Player
+    );
+    xBarScale.domain(Array.from(playerMvpCounts.keys()));
+    yBarScale.domain([0, d3.max(Array.from(playerMvpCounts.values()))]);
+
+    const xAxisBar = d3.axisBottom(xBarScale);
+    mvpBarChart
+        .select(".x-axis-bar")
+        .call(xAxisBar)
+        .style("fill", "#1282a2")
+        .selectAll(".tick text")
+        .each(function (d) {
+            const self = d3.select(this);
+            const text = d.split(" ");
+            self.text("");
+
+            self.append("tspan").attr("x", 0).text(text[0]);
+
+            self.append("tspan").attr("x", 0).attr("dy", "1em").text(text[1]);
+        })
+        .transition()
+        .duration(500);
+
+    const yAxisBar = d3.axisLeft(yBarScale).ticks(5);
+    mvpBarChart
+        .select(".y-axis-bar")
+        .transition()
+        .duration(500)
+        .style("fill", "#1282a2")
+        .call(yAxisBar);
+
+    const colorScale = d3.scaleOrdinal().range(colorPalette);
+
+    const bars = mvpBarChart
+        .selectAll(".bar")
+        .data(Array.from(playerMvpCounts.entries()));
+
+    bars.exit()
+        .transition()
+        .duration(500)
+        .attr("y", yBarScale(0))
+        .attr("height", 0)
+        .remove();
+
+    bars.enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("x", (d) => xBarScale(d[0]))
+        .attr("width", xBarScale.bandwidth())
+        .attr("y", yBarScale(0))
+        .attr("height", 0)
+        .merge(bars)
+        .style("fill", (d, i) => colorScale(i))
+        .transition()
+        .duration(500)
+        .attr("x", (d) => xBarScale(d[0]))
+        .attr("width", xBarScale.bandwidth())
+        .attr("y", (d) => yBarScale(d[1]))
+        .attr("height", (d) => scatterPlotHeight - yBarScale(d[1]));
+
+    const barLabels = mvpBarChart
+        .selectAll(".bar-label")
+        .data(Array.from(playerMvpCounts.entries()));
+
+    barLabels
+        .enter()
+        .append("text")
+        .attr("class", "bar-label")
+        .merge(barLabels)
+        .transition()
+        .duration(500)
+        .attr("x", (d) => xBarScale(d[0]) + xBarScale.bandwidth() / 2)
+        .attr("y", (d) => yBarScale(d[1]) - 5)
+        .text((d) => d[1])
+        .style("text-anchor", "middle")
+        .style("fill", "white");
+
+    barLabels.exit().remove();
+}
 
 let mapInteraction = async () => {
     try {
@@ -342,11 +627,14 @@ let mapInteraction = async () => {
         svg.call(zoom);
         setSelectedCriteria();
         const teams = await loadTeams();
+        const players = await loadPlayers();
         const defaultYear = teams[0].Year;
         createPatterns(teams);
         createCircles(defaultYear, teams);
         createBarChart(defaultYear, teams);
         createScatterPlot(defaultYear, teams);
+        renderMvpTeamsBarchart(defaultYear, players, teams);
+        renderMvpBarchart(defaultYear, players);
 
         playButton.on("click", () => {
             if (slider.property("value") == 2021) {
@@ -355,6 +643,12 @@ let mapInteraction = async () => {
                 createCircles(slider.property("value"), teams);
                 createBarChart(slider.property("value"), teams);
                 createScatterPlot(slider.property("value"), teams);
+                renderMvpBarchart(slider.property("value"), players);
+                renderMvpTeamsBarchart(
+                    slider.property("value"),
+                    players,
+                    teams
+                );
             }
             if (!intervalId) {
                 intervalId = d3.interval(() => {
@@ -367,7 +661,8 @@ let mapInteraction = async () => {
                     createCircles(value, teams);
                     createBarChart(value, teams);
                     createScatterPlot(value, teams);
-
+                    renderMvpBarchart(value, players);
+                    renderMvpTeamsBarchart(value, players, teams);
                     if (slider.property("value") == 2021) {
                         pause();
                     }
@@ -386,6 +681,8 @@ let mapInteraction = async () => {
             createCircles(year, teams);
             createBarChart(year, teams);
             createScatterPlot(year, teams);
+            renderMvpTeamsBarchart(year, players, teams);
+            renderMvpBarchart(year, players);
         });
 
         criteriaRadioButtons.on("change", () => {
@@ -393,7 +690,6 @@ let mapInteraction = async () => {
             let year = slider.property("value");
             createCircles(year, teams);
             createBarChart(year, teams);
-            createScatterPlot(year, teams);
         });
 
         westZoom.on("click", () => {
