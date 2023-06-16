@@ -358,7 +358,7 @@ mvpBarChartTeam
     .attr("x", scatterPlotWidth / 2)
     .attr("y", -30)
     .style("text-anchor", "middle")
-    .text("Number of MVP titles by player")
+    .text("Number of MVP titles by team")
     .style("fill", "#fefcfb");
 
 mvpBarChartTeam
